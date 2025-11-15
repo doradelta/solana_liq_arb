@@ -1,18 +1,11 @@
-use anyhow::{bail, Context, Result};
+use anyhow::{Context, Result, bail};
 use carbon_core::borsh::{self, BorshSerialize};
 use carbon_core::deserialize::CarbonDeserialize;
-use carbon_raydium_clmm_decoder::instructions::open_position_v2::{
-    OpenPositionV2,
-};
+use carbon_raydium_clmm_decoder::instructions::open_position_v2::OpenPositionV2;
 use solana_client::rpc_client::RpcClient;
 use solana_sdk::{
-    commitment_config::CommitmentConfig,
-    instruction::AccountMeta,
-    pubkey::Pubkey,
-    signature::Keypair,
-    signer::Signer,
-    system_program, sysvar,
-    transaction::Transaction,
+    commitment_config::CommitmentConfig, instruction::AccountMeta, pubkey::Pubkey,
+    signature::Keypair, signer::Signer, system_program, sysvar, transaction::Transaction,
 };
 use spl_associated_token_account::get_associated_token_address_with_program_id;
 use spl_token::ID as SPL_TOKEN_PROGRAM_ID;
@@ -44,7 +37,8 @@ pub async fn run_open(
     // Fetch cached pool info (program id, mints, vaults, tick spacing)
     let pool_snap = pool_cache::get_or_fetch_sync(&rpc, &pool, false)
         .context("read pool snapshot (pool-cache). run cache-pool if missing")?;
-    let mut program_id = Pubkey::from_str(&pool_snap.program_id).unwrap_or(Pubkey::new_from_array([0u8; 32]));
+    let mut program_id =
+        Pubkey::from_str(&pool_snap.program_id).unwrap_or(Pubkey::new_from_array([0u8; 32]));
     if program_id == Pubkey::new_from_array([0u8; 32]) {
         // Refresh owner if cache was created before program_id was recorded
         program_id = rpc.get_account(&pool)?.owner;
@@ -80,7 +74,8 @@ pub async fn run_open(
 
     // PDAs
     let metadata_account = metadata_pda(&position_nft_mint.pubkey()).0;
-    let personal_position = personal_position_pda(&position_nft_mint.pubkey(), &program_id).0;
+    let personal_position =
+        personal_position_pda(&position_nft_mint.pubkey(), &pool, &program_id).0;
     let protocol_position = protocol_position_pda(&pool, t_lower, t_upper, &program_id).0;
     let tick_array_lower = tick_array_pda(&pool, ta_lower_start, &program_id).0;
     let tick_array_upper = tick_array_pda(&pool, ta_upper_start, &program_id).0;
@@ -92,8 +87,10 @@ pub async fn run_open(
     let token_program2022 = Pubkey::from_str(SPL_TOKEN_2022_PROGRAM_ID)?;
 
     // User token accounts (ATA per mint/program)
-    let user_token0 = get_associated_token_address_with_program_id(&position_nft_owner, &mint0, &token_program0);
-    let user_token1 = get_associated_token_address_with_program_id(&position_nft_owner, &mint1, &token_program1);
+    let user_token0 =
+        get_associated_token_address_with_program_id(&position_nft_owner, &mint0, &token_program0);
+    let user_token1 =
+        get_associated_token_address_with_program_id(&position_nft_owner, &mint1, &token_program1);
 
     let metas: Vec<AccountMeta> = vec![
         AccountMeta::new(payer.pubkey(), true),
@@ -169,11 +166,19 @@ fn metadata_pda(mint: &Pubkey) -> (Pubkey, u8) {
     )
 }
 
-fn personal_position_pda(nft_mint: &Pubkey, program_id: &Pubkey) -> (Pubkey, u8) {
-    Pubkey::find_program_address(&[b"personal_position", nft_mint.as_ref()], program_id)
+fn personal_position_pda(nft_mint: &Pubkey, pool: &Pubkey, program_id: &Pubkey) -> (Pubkey, u8) {
+    Pubkey::find_program_address(
+        &[b"personal_position", pool.as_ref(), nft_mint.as_ref()],
+        program_id,
+    )
 }
 
-fn protocol_position_pda(pool: &Pubkey, tick_lower: i32, tick_upper: i32, program_id: &Pubkey) -> (Pubkey, u8) {
+fn protocol_position_pda(
+    pool: &Pubkey,
+    tick_lower: i32,
+    tick_upper: i32,
+    program_id: &Pubkey,
+) -> (Pubkey, u8) {
     Pubkey::find_program_address(
         &[
             b"protocol_position",
