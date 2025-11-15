@@ -1,0 +1,3 @@
+[build]
+# Use a target dir outside the encrypted home to avoid eCryptfs filename length limits.
+target-dir = "/tmp/solana-liq-arb-target"
