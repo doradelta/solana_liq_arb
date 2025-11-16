@@ -1,0 +1,44 @@
+[package]
+name = "solana_liquidity_arb"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+anyhow = "1"
+bs58 = "0.5"
+clap = { version = "4.5", features = ["derive"] }
+dotenvy = "0.15"
+borsh = "0.10"
+
+# Solana 1.16.x line (compatible with raydium-amm-v3 crate)
+solana-sdk = "=1.16.24"
+solana-client = "=1.16.24"
+solana-transaction-status = "=1.16.24"
+solana-account-decoder = "=1.16.24"
+
+# SPL
+spl-token = { version = "3.5.0", features = ["no-entrypoint"] }
+spl-token-2022 = { version = "0.6.0", features = ["no-entrypoint"] }
+spl-associated-token-account = "2.2.0"
+
+# Anchor client traits used by the generated Raydium crate
+anchor-lang = "0.29.0"
+anchor-spl = "0.29.0"
+
+# Raydium CLMM Anchor-generated client (instruction builders + account layouts)
+raydium-amm-v3 = "0.1.0"
+# Raydium CLMM mirror crate with full account layouts (useful for decoding pool/reward fields)
+raydium_clmm = "0.1.0"
+solana-pubkey = "2.4.0"
+
+# Metaplex metadata program id + helper to derive metadata PDA
+mpl-token-metadata = "1.11.0"
+
+# === Orca Whirlpools (CLMM) ===
+# Use Solana-1.16–compatible crates to avoid toolchain conflicts.
+orca_whirlpools_client = "5"
+orca_whirlpools_core = "2"
+
+# === Meteora DLMM ===
+meteora-sol = "0.1.13"
+solana-instruction = "2.3.0"
